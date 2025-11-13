@@ -21,8 +21,7 @@ class MyApp extends StatelessWidget {
       title: 'Zenzio Delivery',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      // home: const LoginScreen(),
-      home: const MapScreen(),
+      home: const LoginScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),

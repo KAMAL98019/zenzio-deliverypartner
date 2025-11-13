@@ -36,7 +36,8 @@ class ApiResponse<T> {
 }
 
 class ApiClient {
-  static const String baseUrl = 'https://backend.zenzio.in';
+  static const String baseUrl =
+      'https://erica-transthoracic-envyingly.ngrok-free.dev';
 
   late Dio _dio;
 
@@ -53,6 +54,14 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          options.headers.addAll({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'platform': 'Android',
+            'User-Agent': 'Android',
+            'mode': 'development',
+            'clientId': '0fb4e7a0-8ca8-46a3-8ffe-0f4a078bb811',
+          });
           debugPrint('📤 [REQUEST] ${options.method} ${options.path}');
           return handler.next(options);
         },
@@ -85,7 +94,7 @@ class ApiClient {
     required dynamic data, // Changed to dynamic to accept FormData
   }) async {
     try {
-      final response = await _dio.post('/api/delivery/register', data: data);
+      final response = await _dio.post('/fleets/auth/signup/email', data: data);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ApiResponse.success(response.data);
       } else {
@@ -99,16 +108,13 @@ class ApiClient {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> login({
-    required String emailOrMobile,
+    required String email,
     required String password,
   }) async {
     try {
       final response = await _dio.post(
-        '/api/delivery/login',
-        data: {
-          'emailOrMobile': emailOrMobile,
-          'password': password,
-        },
+        '/fleets/auth/login/email',
+        data: {'email': email, 'password': password},
       );
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -123,12 +129,12 @@ class ApiClient {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> sendOtp({
-    required String emailOrMobile,
+    required String mobileNumber,
   }) async {
     try {
       final response = await _dio.post(
-        '/api/delivery/forgot-password/send-otp',
-        data: {'emailOrMobile': emailOrMobile},
+        '/otp/send',
+        data: {'phone': mobileNumber.trim()},
       );
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -143,16 +149,13 @@ class ApiClient {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> verifyOtp({
-    required String emailOrMobile,
+    required String mobileNumber,
     required String otp,
   }) async {
     try {
       final response = await _dio.post(
-        '/api/delivery/forgot-password/verify-otp',
-        data: {
-          'emailOrMobile': emailOrMobile,
-          'otp': otp,
-        },
+        '/otp/verify',
+        data: {'phone': mobileNumber.trim(), 'otp': otp.trim()},
       );
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -173,10 +176,7 @@ class ApiClient {
     try {
       final response = await _dio.post(
         '/api/delivery/forgot-password/reset-password',
-        data: {
-          'emailOrMobile': emailOrMobile,
-          'newPassword': newPassword,
-        },
+        data: {'emailOrMobile': emailOrMobile, 'newPassword': newPassword},
       );
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -224,16 +224,26 @@ class ApiClient {
       final formData = FormData();
       formData.fields.add(MapEntry('partnerId', partnerId));
 
-      if (latitude != null) formData.fields.add(MapEntry('latitude', latitude.toString()));
-      if (longitude != null) formData.fields.add(MapEntry('longitude', longitude.toString()));
+      if (latitude != null)
+        formData.fields.add(MapEntry('latitude', latitude.toString()));
+      if (longitude != null)
+        formData.fields.add(MapEntry('longitude', longitude.toString()));
       if (photoFilePath != null) {
-        formData.files.add(MapEntry(
-          'attendancePhoto',
-          await MultipartFile.fromFile(photoFilePath, filename: 'attendance.jpg'),
-        ));
+        formData.files.add(
+          MapEntry(
+            'attendancePhoto',
+            await MultipartFile.fromFile(
+              photoFilePath,
+              filename: 'attendance.jpg',
+            ),
+          ),
+        );
       }
 
-      final response = await _dio.post('/api/partner/attendance', data: formData);
+      final response = await _dio.post(
+        '/api/partner/attendance',
+        data: formData,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ApiResponse.success(response.data);
@@ -260,7 +270,10 @@ class ApiClient {
         if (longitude != null) 'longitude': longitude,
       };
 
-      final response = await _dio.put('/api/partner/attendance/$partnerId/status', data: payload);
+      final response = await _dio.put(
+        '/api/partner/attendance/$partnerId/status',
+        data: payload,
+      );
 
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -326,7 +339,11 @@ class ApiClient {
     try {
       final response = await _dio.put(
         '/api/delivery/$deliveryId/reject',
-        data: {'deliveryId': deliveryId, 'partnerId': partnerId, 'reason': reason},
+        data: {
+          'deliveryId': deliveryId,
+          'partnerId': partnerId,
+          'reason': reason,
+        },
       );
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -377,7 +394,10 @@ class ApiClient {
         ),
       );
 
-      final response = await _dio.put('/api/delivery/$deliveryId/photo', data: formData);
+      final response = await _dio.put(
+        '/api/delivery/$deliveryId/photo',
+        data: formData,
+      );
 
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -395,12 +415,16 @@ class ApiClient {
     required String partnerId,
   }) async {
     try {
-      final response =
-          await _dio.get('/api/delivery/history', queryParameters: {'partnerId': partnerId});
+      final response = await _dio.get(
+        '/api/delivery/history',
+        queryParameters: {'partnerId': partnerId},
+      );
 
       if (response.statusCode == 200) {
         final data = response.data is Map ? response.data['data'] ?? [] : [];
-        return ApiResponse.success(List<Map<String, dynamic>>.from(data as List));
+        return ApiResponse.success(
+          List<Map<String, dynamic>>.from(data as List),
+        );
       } else {
         return ApiResponse.error(_getErrorMessage(null, response));
       }
@@ -410,12 +434,12 @@ class ApiClient {
       return ApiResponse.error('Unexpected error: $e');
     }
   }
+
   Future<ApiResponse<Map<String, dynamic>>> getAttendance({
     required String partnerId,
   }) async {
     try {
-      final response =
-          await _dio.get('/api/partner/attendance/$partnerId');
+      final response = await _dio.get('/api/partner/attendance/$partnerId');
 
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);
@@ -427,7 +451,6 @@ class ApiClient {
     } catch (e) {
       return ApiResponse.error('Unexpected error: $e');
     }
-  
   }
 
   Future<ApiResponse<Map<String, dynamic>>> updatePartnerDetails({
@@ -435,7 +458,10 @@ class ApiClient {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dio.put('/api/delivery/partner/$partnerId', data: data);
+      final response = await _dio.put(
+        '/api/delivery/partner/$partnerId',
+        data: data,
+      );
 
       if (response.statusCode == 200) {
         return ApiResponse.success(response.data);

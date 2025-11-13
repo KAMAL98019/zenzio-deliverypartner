@@ -41,7 +41,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _apiClient.sendOtp(emailOrMobile: _emailController.text);
+      await _apiClient.sendOtp(mobileNumber: _emailController.text);
       setState(() {
         _step = 2;
         _resendCountdown = 59;
@@ -76,7 +76,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       await _apiClient.verifyOtp(
-        emailOrMobile: _emailController.text,
+        mobileNumber: _emailController.text,
         otp: _otpController.text,
       );
       setState(() => _step = 3);
@@ -97,71 +97,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  Future<void> _resetPassword() async {
-    if (_newPasswordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
-      return;
-    }
 
-    if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await _apiClient.resetPassword(
-        emailOrMobile: _emailController.text,
-        newPassword: _newPasswordController.text,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset successfully!')),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Password reset failed: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _resendOtp() async {
-    if (_resendCountdown > 0) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await _apiClient.resendOtp(emailOrMobile: _emailController.text);
-      setState(() => _resendCountdown = 59);
-      _startResendCountdown();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP resent successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to resend OTP: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   void _startResendCountdown() {
     Future.delayed(const Duration(seconds: 1), () {
@@ -316,17 +252,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     fontSize: 14,
                   ),
                 )
-              : GestureDetector(
-                  onTap: _resendOtp,
-                  child: const Text(
-                    'Resend code',
-                    style: TextStyle(
-                      color: AppTheme.primaryRed,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              : Container(),
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -449,7 +375,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _isLoading ? null : _resetPassword,
+            onPressed: null,
             child: _isLoading
                 ? const SizedBox(
                     height: 20,
